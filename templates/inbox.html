@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Inbox{% endblock %}
+
+{% block header_buttons %}
+    <a href="/compose" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition duration-200">
+        <i class="fas fa-edit mr-2"></i>Compose
+    </a>
+    <button onclick="loadEmails()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200">
+        <i class="fas fa-sync-alt mr-2"></i>Refresh
+    </button>
+    <button onclick="analyzeAllEmails()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition duration-200">
+        <i class="fas fa-robot mr-2"></i>AI Analyze
+    </button>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Stats Section -->
+    <div id="statsSection"></div>
+
+    <!-- AI Insights -->
+    <div id="aiInsights" class="hidden">
+        <div class="ai-insight">
+            <h4 class="font-semibold text-white mb-2"><i class="fas fa-robot mr-2"></i>AI Insights</h4>
+            <p id="insightText" class="text-gray-300">Analyzing your email patterns...</p>
+        </div>
+    </div>
+
+    <!-- User Status -->
+    <div id="userStatus">
+        <div class="bg-yellow-600 text-white p-4 rounded-lg">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            <strong>Please sign in to view your emails</strong>
+        </div>
+    </div>
+
+    <!-- Email List -->
+    <div id="emailList">
+        <div class="text-center py-12 text-gray-400">
+            <i class="fas fa-inbox text-5xl mb-4 opacity-50"></i>
+            <p class="text-lg">Sign in to load your emails</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    function checkAuth() {
+        const tokens = localStorage.getItem('gmail_tokens');
+        const userEmail = localStorage.getItem('user_email');
+        
+        if (tokens && userEmail) {
+            document.getElementById('userStatus').innerHTML = `
+                <div class="bg-blue-600 text-white p-4 rounded-lg">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    <small>Showing emails for: <strong>${userEmail}</strong></small>
+                </div>
+            `;
+            return true;
+        }
+        return false;
+    }
+
+    async function loadEmails() {
+        if (!checkAuth()) {
+            alert('Please sign in first');
+            window.location.href = '/';
+            return;
+        }
+
+        const tokens = JSON.parse(localStorage.getItem('gmail_tokens'));
+        const emailList = document.getElementById('emailList');
+        
+        emailList.innerHTML = `
+            <div class="text-center py-8">
+                <div class="spinner mx-auto mb-4"></div>
+                <p class="text-gray-400">Loading your emails...</p>
+            </div>
+        `;
+
+        try {
+            const response = await fetch('/api/emails', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ tokens: tokens })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                displayEmails(data.emails);
+                updateStats(data.stats);
+                showAIInsights(data.stats);
+            } else {
+                let errorHtml = `
+                    <div class="bg-red-600 text-white p-4 rounded-lg">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        Error loading emails: ${data.error || 'Unknown error'}
+                `;
+                if (data.error && data.error.includes('token')) {
+                    errorHtml += `<br><a href="/auth" class="bg-yellow-500 text-black px-3 py-1 rounded text-sm mt-2 inline-block">Re-authenticate</a>`;
+                }
+                errorHtml += `</div>`;
+                emailList.innerHTML = errorHtml;
+            }
+        } catch (error) {
+            emailList.innerHTML = `
+                <div class="bg-red-600 text-white p-4 rounded-lg">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    Network error: ${error.message}
+                </div>
+            `;
+        }
+    }
+
+    async function analyzeAllEmails() {
+        if (!checkAuth()) {
+            alert('Please sign in first');
+            return;
+        }
+
+        const emailList = document.getElementById('emailList');
+        const originalContent = emailList.innerHTML;
+        
+        emailList.innerHTML = `
+            <div class="text-center py-8">
+                <div class="spinner mx-auto mb-4"></div>
+                <p class="text-gray-400">AI is analyzing all emails...</p>
+            </div>
+        `;
+
+        try {
+            const tokens = JSON.parse(localStorage.getItem('gmail_tokens'));
+            const response = await fetch('/api/analyze-all-emails', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ tokens: tokens })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                displayEmails(data.emails);
+                showAdvancedInsights(data.analysis);
+            } else {
+                emailList.innerHTML = originalContent;
+                alert('AI analysis failed: ' + (data.error || 'Unknown error'));
+            }
+        } catch (error) {
+            emailList.innerHTML = originalContent;
+            alert('Network error: ' + error.message);
+        }
+    }
+
+    function showAIInsights(stats) {
+        document.getElementById('aiInsights').classList.remove('hidden');
+        const insightText = document.getElementById('insightText');
+        
+        if (stats.work > stats.promotions && stats.work > stats.low) {
+            insightText.innerHTML = '<i class="fas fa-chart-line mr-2"></i>Most of your emails are work-related. Consider scheduling focused work periods.';
+        } else if (stats.promotions > stats.work) {
+            insightText.innerHTML = '<i class="fas fa-shopping-cart mr-2"></i>You have many promotional emails. Consider creating filters for better organization.';
+        } else {
+            insightText.innerHTML = '<i class="fas fa-balance-scale mr-2"></i>Your email distribution looks balanced. Keep managing your inbox effectively!';
+        }
+    }
+
+    function showAdvancedInsights(analysis) {
+        const insightText = document.getElementById('insightText');
+        insightText.innerHTML = '<i class="fas fa-robot mr-2"></i>' + (analysis || 'AI analysis completed successfully.');
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        if (checkAuth()) {
+            loadEmails();
+        }
+    });
+</script>
+{% endblock %}
