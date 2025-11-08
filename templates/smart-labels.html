@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Labels{% endblock %}
+
+{% block header_buttons %}
+    <button onclick="analyzeLabels()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition duration-200">
+        <i class="fas fa-robot mr-2"></i>Analyze Emails
+    </button>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="bg-blue-600 text-white p-4 rounded-lg">
+        <i class="fas fa-info-circle mr-2"></i>
+        AI-powered email labeling automatically categorizes your emails for better organization.
+    </div>
+
+    <div id="labelsResults">
+        <div class="text-center py-12 text-gray-400">
+            <i class="fas fa-tags text-5xl mb-4 opacity-50"></i>
+            <p class="text-lg">Click "Analyze Emails" to see AI-generated labels</p>
+            <p class="text-sm mt-2">AI will analyze your recent emails and suggest smart labels</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function analyzeLabels() {
+        const tokens = localStorage.getItem('gmail_tokens');
+        if (!tokens) {
+            alert('Please sign in first');
+            window.location.href = '/auth';
+            return;
+        }
+
+        const labelsResults = document.getElementById('labelsResults');
+        labelsResults.innerHTML = `
+            <div class="text-center py-8">
+                <div class="spinner mx-auto mb-4"></div>
+                <p class="text-gray-400">AI is analyzing your emails...</p>
+            </div>
+        `;
+
+        try {
+            const response = await fetch('/api/analyze-labels', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ tokens: JSON.parse(tokens) })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                displayLabelAnalysis(data.analysis);
+            } else {
+                labelsResults.innerHTML = `
+                    <div class="bg-red-600 text-white p-4 rounded-lg">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        Error: ${data.error || 'Unknown error'}
+                    </div>
+                `;
+            }
+        } catch (error) {
+            labelsResults.innerHTML = `
+                <div class="bg-red-600 text-white p-4 rounded-lg">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    Network error: ${error.message}
+                </div>
+            `;
+        }
+    }
+
+    function displayLabelAnalysis(analysis) {
+        let html = '<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">';
+        
+        // Label distribution
+        html += `
+            <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                <h4 class="text-lg font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-chart-pie mr-2 text-blue-500"></i>Label Distribution
+                </h4>
+        `;
+        
+        if (analysis.label_distribution) {
+            for (const [label, count] of Object.entries(analysis.label_distribution)) {
+                html += `
+                    <div class="flex justify-between items-center mb-3 p-3 bg-gray-700 rounded-lg">
+                        <span class="ai-badge">${label}</span>
+                        <span class="text-gray-300 font-semibold">${count} emails</span>
+                    </div>
+                `;
+            }
+        } else {
+            html += '<p class="text-gray-400 text-center py-4">No label data available</p>';
+        }
+        
+        html += `</div>`;
+
+        // AI Recommendations
+        html += `
+            <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                <h4 class="text-lg font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-lightbulb mr-2 text-yellow-500"></i>AI Recommendations
+                </h4>
+                <div class="ai-insight">
+                    <p>${analysis.recommendations || 'Based on your email patterns, consider creating filters for better organization. The AI can help you automate email sorting and prioritize important messages.'}</p>
+                </div>
+                <div class="mt-4 space-y-3">
+                    <div class="flex items-center text-gray-300">
+                        <i class="fas fa-robot text-green-500 mr-3"></i>
+                        <span>Automated label suggestions</span>
+                    </div>
+                    <div class="flex items-center text-gray-300">
+                        <i class="fas fa-filter text-blue-500 mr-3"></i>
+                        <span>Smart filtering rules</span>
+                    </div>
+                    <div class="flex items-center text-gray-300">
+                        <i class="fas fa-bell text-purple-500 mr-3"></i>
+                        <span>Priority notification settings</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        html += '</div>';
+        document.getElementById('labelsResults').innerHTML = html;
+    }
+</script>
+{% endblock %}
