@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Email Details{% endblock %}
+
+{% block header_buttons %}
+    <button onclick="window.history.back()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition duration-200">
+        <i class="fas fa-arrow-left mr-2"></i>Back to Inbox
+    </button>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div id="emailContent">
+        <div class="text-center py-12">
+            <div class="spinner mx-auto mb-4"></div>
+            <p class="text-gray-400">Loading email content...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function loadEmailContent() {
+        const tokens = localStorage.getItem('gmail_tokens');
+        if (!tokens) {
+            document.getElementById('emailContent').innerHTML = `
+                <div class="bg-red-600 text-white p-6 rounded-lg text-center">
+                    <i class="fas fa-exclamation-triangle text-2xl mb-3"></i>
+                    <p class="text-lg">Please sign in to view emails</p>
+                    <a href="/auth" class="inline-block bg-yellow-500 text-black px-4 py-2 rounded mt-3">Sign In</a>
+                </div>
+            `;
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/email/{{ email_id }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ tokens: JSON.parse(tokens) })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                displayEmailContent(data.email);
+            } else {
+                document.getElementById('emailContent').innerHTML = `
+                    <div class="bg-red-600 text-white p-6 rounded-lg">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        Error loading email: ${data.error || 'Unknown error'}
+                    </div>
+                `;
+            }
+        } catch (error) {
+            document.getElementById('emailContent').innerHTML = `
+                <div class="bg-red-600 text-white p-6 rounded-lg">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    Network error: ${error.message}
+                </div>
+            `;
+        }
+    }
+
+    function displayEmailContent(email) {
+        const emailContent = document.getElementById('emailContent');
+        
+        let bodyContent = email.body;
+        if (!bodyContent || bodyContent.trim() === '') {
+            bodyContent = '<p class="text-gray-400 italic">No content available</p>';
+        } else if (!bodyContent.includes('<')) {
+            bodyContent = `<div class="bg-gray-700 p-6 rounded-lg"><pre class="whitespace-pre-wrap font-sans text-gray-300">${escapeHtml(bodyContent)}</pre></div>`;
+        } else {
+            // For HTML content, we need to be careful about sanitization
+            bodyContent = `<div class="email-content bg-gray-700 p-6 rounded-lg">${bodyContent}</div>`;
+        }
+
+        const html = `
+            <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                <!-- Email Header -->
+                <div class="mb-6">
+                    <h1 class="text-2xl font-bold text-white mb-4">${escapeHtml(email.subject)}</h1>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <p class="text-gray-300"><strong><i class="fas fa-user mr-2"></i>From:</strong> ${escapeHtml(email.sender)}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-300"><strong><i class="fas fa-calendar mr-2"></i>Date:</strong> ${escapeHtml(email.date)}</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-gray-300"><strong><i class="fas fa-tag mr-2"></i>Priority:</strong> 
+                            <span class="priority-badge priority-${email.priority}">${email.priority}</span></p>
+                        </div>
+                        <div>
+                            <p class="text-gray-300"><strong><i class="fas fa-envelope mr-2"></i>ID:</strong> 
+                            <code class="text-sm bg-gray-700 px-2 py-1 rounded">${email.id}</code></p>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="border-gray-600 my-6">
+
+                <!-- Email Body -->
+                <div class="mb-6">
+                    <h2 class="text-lg font-semibold text-white mb-4"><i class="fas fa-align-left mr-2"></i>Content:</h2>
+                    ${bodyContent}
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-wrap gap-3">
+                    <a href="/email/{{ email_id }}/summary" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200">
+                        <i class="fas fa-robot mr-2"></i>AI Analysis
+                    </a>
+                    <a href="/email/{{ email_id }}/smart-reply" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition duration-200">
+                        <i class="fas fa-reply mr-2"></i>Smart Reply
+                    </a>
+                    <button onclick="forwardEmail('{{ email_id }}')" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition duration-200">
+                        <i class="fas fa-share mr-2"></i>Forward
+                    </button>
+                    <button onclick="deleteEmail('{{ email_id }}')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition duration-200">
+                        <i class="fas fa-trash mr-2"></i>Delete
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        emailContent.innerHTML = html;
+    }
+
+    function replyToEmail(emailId) {
+        alert('Reply functionality would open here for email: ' + emailId);
+    }
+
+    function forwardEmail(emailId) {
+        alert('Forward functionality would open here for email: ' + emailId);
+    }
+
+    function deleteEmail(emailId) {
+        if (confirm('Are you sure you want to move this email to trash?')) {
+            alert('Delete functionality would execute here for email: ' + emailId);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadEmailContent);
+</script>
+{% endblock %}
