@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}AI Email Composer{% endblock %}
+
+{% block header_buttons %}
+    <button onclick="window.history.back()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition duration-200">
+        <i class="fas fa-arrow-left mr-2"></i>Back
+    </button>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <form id="aiComposeForm">
+            <div class="space-y-6">
+                <!-- Recipient -->
+                <div>
+                    <label for="recipient" class="block text-sm font-medium text-gray-300 mb-2">Recipient:</label>
+                    <input type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500" 
+                           id="recipient" required placeholder="e.g., john@company.com or John Smith">
+                </div>
+                
+                <!-- Purpose -->
+                <div>
+                    <label for="purpose" class="block text-sm font-medium text-gray-300 mb-2">Email Purpose:</label>
+                    <input type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500" 
+                           id="purpose" required placeholder="e.g., Meeting request, Project update, Job inquiry">
+                </div>
+                
+                <!-- Context -->
+                <div>
+                    <label for="context" class="block text-sm font-medium text-gray-300 mb-2">Additional Context:</label>
+                    <textarea class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 min-h-[120px]" 
+                              id="context" placeholder="Provide any additional details, key points to include, or specific requirements..."></textarea>
+                </div>
+                
+                <!-- Tone -->
+                <div>
+                    <label for="tone" class="block text-sm font-medium text-gray-300 mb-2">Tone:</label>
+                    <select class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500" id="tone">
+                        <option value="professional">Professional</option>
+                        <option value="casual">Casual</option>
+                        <option value="friendly">Friendly</option>
+                        <option value="formal">Formal</option>
+                        <option value="urgent">Urgent</option>
+                    </select>
+                </div>
+                
+                <!-- Generate Button -->
+                <div class="flex gap-3">
+                    <button type="button" onclick="generateEmail()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-200">
+                        <i class="fas fa-robot mr-2"></i>Generate Email
+                    </button>
+                    <button type="button" onclick="clearForm()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-200">
+                        <i class="fas fa-trash mr-2"></i>Clear
+                    </button>
+                </div>
+            </div>
+        </form>
+        
+        <!-- Generated Email Preview -->
+        <div id="generatedEmail" class="mt-8 hidden">
+            <h3 class="text-xl font-semibold text-white mb-4">Generated Email:</h3>
+            <div class="bg-gray-700 rounded-lg p-6 border border-gray-600">
+                <div id="emailPreview" class="email-content text-gray-300 whitespace-pre-wrap"></div>
+            </div>
+            
+            <div class="flex gap-3 mt-4">
+                <button onclick="useGeneratedEmail()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-200">
+                    <i class="fas fa-check mr-2"></i>Use This Email
+                </button>
+                <button onclick="regenerateEmail()" class="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-200">
+                    <i class="fas fa-redo mr-2"></i>Regenerate
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function generateEmail() {
+        const recipient = document.getElementById('recipient').value;
+        const purpose = document.getElementById('purpose').value;
+        const context = document.getElementById('context').value;
+        const tone = document.getElementById('tone').value;
+
+        if (!recipient || !purpose) {
+            alert('Please fill in recipient and purpose fields');
+            return;
+        }
+
+        // Show loading state
+        const generateBtn = document.querySelector('button[onclick="generateEmail()"]');
+        const originalText = generateBtn.innerHTML;
+        generateBtn.innerHTML = '<div class="spinner inline-block mr-2"></div>Generating...';
+        generateBtn.disabled = true;
+
+        try {
+            const response = await fetch('/api/ai-compose-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    recipient: recipient,
+                    purpose: purpose,
+                    context: context,
+                    tone: tone
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                document.getElementById('emailPreview').textContent = data.email_content;
+                document.getElementById('generatedEmail').classList.remove('hidden');
+                
+                // Scroll to generated email
+                document.getElementById('generatedEmail').scrollIntoView({ behavior: 'smooth' });
+            } else {
+                alert('AI composition failed: ' + (data.error || 'Unknown error'));
+            }
+        } catch (error) {
+            alert('Network error: ' + error.message);
+        } finally {
+            // Restore button state
+            generateBtn.innerHTML = originalText;
+            generateBtn.disabled = false;
+        }
+    }
+
+    function useGeneratedEmail() {
+        const emailContent = document.getElementById('emailPreview').textContent;
+        // Store in localStorage and redirect to compose page
+        localStorage.setItem('ai_generated_email', emailContent);
+        window.location.href = '/compose';
+    }
+
+    function regenerateEmail() {
+        generateEmail();
+    }
+
+    function clearForm() {
+        document.getElementById('aiComposeForm').reset();
+        document.getElementById('generatedEmail').classList.add('hidden');
+    }
+
+    // Check if we have a generated email to pre-fill
+    document.addEventListener('DOMContentLoaded', function() {
+        const generatedEmail = localStorage.getItem('ai_generated_email');
+        if (generatedEmail) {
+            // You could pre-fill the compose form here if needed
+            localStorage.removeItem('ai_generated_email');
+        }
+    });
+</script>
+{% endblock %}
