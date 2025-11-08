@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="text-center">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-5xl font-bold text-white mb-6">
+            <i class="fas fa-robot text-blue-500 mr-4"></i>
+            Gmail AI Assistant
+        </h1>
+        <p class="text-xl text-gray-300 mb-8">AI-powered email management with smart categorization and insights</p>
+        
+        <div id="signedOutView" class="space-y-8">
+            <div class="bg-gray-800 rounded-2xl p-8 border border-gray-700">
+                <div class="text-center">
+                    <h2 class="text-2xl font-bold text-white mb-4">
+                        <i class="fas fa-lock mr-2"></i>Sign In with Google
+                    </h2>
+                    <p class="text-gray-400 mb-6">Access your Gmail with AI-powered features</p>
+                    <a href="/auth" class="inline-flex items-center px-8 py-4 bg-white text-gray-900 rounded-xl font-bold text-lg hover:bg-gray-100 transition duration-200 shadow-lg">
+                        <i class="fab fa-google mr-3"></i>Sign In with Google
+                    </a>
+                    <p class="text-gray-500 text-sm mt-4">Your data is securely processed and never stored on our servers</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                    <i class="fas fa-robot text-3xl text-blue-500 mb-4"></i>
+                    <h3 class="text-lg font-semibold text-white mb-2">AI Categorization</h3>
+                    <p class="text-gray-400 text-sm">Automatically categorize emails by priority using advanced AI</p>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                    <i class="fas fa-chart-bar text-3xl text-green-500 mb-4"></i>
+                    <h3 class="text-lg font-semibold text-white mb-2">Smart Insights</h3>
+                    <p class="text-gray-400 text-sm">Get analytics on your email habits and productivity patterns</p>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                    <i class="fas fa-reply text-3xl text-purple-500 mb-4"></i>
+                    <h3 class="text-lg font-semibold text-white mb-2">Smart Replies</h3>
+                    <p class="text-gray-400 text-sm">AI-generated contextual responses for quick email replies</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="signedInView" class="hidden">
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
+                <div class="text-center">
+                    <i class="fas fa-check-circle text-4xl mb-4"></i>
+                    <h2 class="text-2xl font-bold mb-2">Welcome back!</h2>
+                    <p class="text-blue-100 mb-6">You are signed in as <strong id="welcomeEmail"></strong></p>
+                    <div class="flex flex-wrap justify-center gap-4">
+                        <a href="/inbox" class="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition duration-200">
+                            <i class="fas fa-inbox mr-2"></i>Go to Inbox
+                        </a>
+                        <a href="/compose" class="bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition duration-200">
+                            <i class="fas fa-edit mr-2"></i>Compose Email
+                        </a>
+                        <a href="/ai-compose" class="bg-purple-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-600 transition duration-200">
+                            <i class="fas fa-robot mr-2"></i>AI Compose
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function updateUI() {
+        const user = localStorage.getItem('user_email');
+        if (user) {
+            document.getElementById('signedOutView').classList.add('hidden');
+            document.getElementById('signedInView').classList.remove('hidden');
+            document.getElementById('welcomeEmail').textContent = user;
+        } else {
+            document.getElementById('signedOutView').classList.remove('hidden');
+            document.getElementById('signedInView').classList.add('hidden');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        updateUI();
+        
+        // Check if we have auth success data from server
+        {% if auth_success %}
+            localStorage.setItem('gmail_tokens', '{{ credentials|safe }}');
+            localStorage.setItem('user_email', '{{ user_info.email }}');
+            localStorage.setItem('user_name', '{{ user_info.name }}');
+            updateUI();
+        {% endif %}
+    });
+</script>
+{% endblock %}
