@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Voice Compose{% endblock %}
+
+{% block header_buttons %}
+    <button onclick="window.history.back()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition duration-200">
+        <i class="fas fa-arrow-left mr-2"></i>Back
+    </button>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-gray-800 rounded-xl p-8 border border-gray-700 text-center">
+        <div class="mb-6">
+            <i class="fas fa-microphone text-5xl text-blue-500 mb-4"></i>
+            <h2 class="text-2xl font-bold text-white mb-2">Voice Compose</h2>
+            <p class="text-gray-400">Click to start voice recording</p>
+        </div>
+        
+        <div class="mb-6">
+            <button id="startRecord" onclick="startRecording()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full text-lg font-semibold transition duration-200">
+                <i class="fas fa-microphone mr-3"></i>Start Recording
+            </button>
+            <button id="stopRecord" onclick="stopRecording()" class="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-full text-lg font-semibold transition duration-200 hidden">
+                <i class="fas fa-stop mr-3"></i>Stop Recording
+            </button>
+        </div>
+        
+        <div id="recordingStatus" class="bg-blue-600 text-white p-4 rounded-lg mb-6 hidden">
+            <div class="flex items-center justify-center">
+                <i class="fas fa-circle text-red-500 mr-3 animate-pulse"></i>
+                <span class="font-semibold">Recording... Speak now</span>
+            </div>
+        </div>
+        
+        <div id="transcriptResult" class="hidden">
+            <h3 class="text-xl font-semibold text-white mb-4">Transcript:</h3>
+            <div class="bg-gray-700 p-6 rounded-lg mb-6 text-left">
+                <p id="transcriptText" class="text-gray-300 whitespace-pre-wrap"></p>
+            </div>
+            <div class="flex flex-wrap gap-3 justify-center">
+                <button onclick="useTranscript()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-200">
+                    <i class="fas fa-check mr-2"></i>Use This Text
+                </button>
+                <button onclick="retryRecording()" class="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-200">
+                    <i class="fas fa-redo mr-2"></i>Try Again
+                </button>
+            </div>
+        </div>
+
+        <div class="mt-8">
+            <div class="bg-yellow-600 text-white p-4 rounded-lg">
+                <i class="fas fa-info-circle mr-2"></i>
+                <strong>Note:</strong> Voice recording is not available in the deployed version. This is a demonstration interface.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function startRecording() {
+        alert('Voice recording is not available in the deployed version. Using demo text instead.');
+        simulateVoiceInput();
+    }
+    
+    function stopRecording() {
+        // No-op in deployment
+    }
+    
+    function simulateVoiceInput() {
+        // Demo voice input - you can customize this
+        const demoText = `Hello Team,
+
+I would like to schedule a meeting for next Tuesday at 2:00 PM to discuss the project timeline and deliverables. 
+
+Please let me know if that time works for everyone, or suggest an alternative time that would be better.
+
+Looking forward to our discussion.
+
+Best regards,
+[Your Name]`;
+        
+        document.getElementById('transcriptText').textContent = demoText;
+        document.getElementById('transcriptResult').classList.remove('hidden');
+        document.getElementById('startRecord').classList.add('hidden');
+        document.getElementById('stopRecord').classList.add('hidden');
+        document.getElementById('recordingStatus').classList.add('hidden');
+    }
+    
+    function useTranscript() {
+        const text = document.getElementById('transcriptText').textContent;
+        // Store the transcript and redirect to compose page
+        localStorage.setItem('voice_transcript', text);
+        window.location.href = '/compose';
+    }
+    
+    function retryRecording() {
+        document.getElementById('transcriptResult').classList.add('hidden');
+        document.getElementById('startRecord').classList.remove('hidden');
+        document.getElementById('transcriptText').textContent = '';
+    }
+
+    // Check if we have a voice transcript to use
+    document.addEventListener('DOMContentLoaded', function() {
+        const transcript = localStorage.getItem('voice_transcript');
+        if (transcript) {
+            // You could auto-populate the compose form if needed
+            localStorage.removeItem('voice_transcript');
+        }
+    });
+</script>
+{% endblock %}
