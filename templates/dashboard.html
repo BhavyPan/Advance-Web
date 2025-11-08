@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Stats Cards -->
+        <div class="stats-card">
+            <div class="text-3xl font-bold">0</div>
+            <div class="text-sm opacity-90">Total Emails</div>
+            <i class="fas fa-envelope text-2xl mt-2 opacity-70"></i>
+        </div>
+        <div class="stats-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <div class="text-3xl font-bold">0</div>
+            <div class="text-sm opacity-90">Work Priority</div>
+            <i class="fas fa-briefcase text-2xl mt-2 opacity-70"></i>
+        </div>
+        <div class="stats-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <div class="text-3xl font-bold">0</div>
+            <div class="text-sm opacity-90">Promotions</div>
+            <i class="fas fa-tag text-2xl mt-2 opacity-70"></i>
+        </div>
+        <div class="stats-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+            <div class="text-3xl font-bold">0</div>
+            <div class="text-sm opacity-90">Response Rate</div>
+            <i class="fas fa-chart-line text-2xl mt-2 opacity-70"></i>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Email Distribution -->
+        <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+            <h3 class="text-xl font-semibold text-white mb-4 flex items-center">
+                <i class="fas fa-chart-pie mr-2 text-blue-500"></i>Email Distribution
+            </h3>
+            <div class="text-center py-12 text-gray-400">
+                <i class="fas fa-chart-bar text-4xl mb-3 opacity-50"></i>
+                <p>Sign in to view your email analytics</p>
+                <a href="/auth" class="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg mt-3">
+                    <i class="fab fa-google mr-2"></i>Sign In to View Analytics
+                </a>
+            </div>
+        </div>
+
+        <!-- Productivity Insights -->
+        <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+            <h3 class="text-xl font-semibold text-white mb-4 flex items-center">
+                <i class="fas fa-robot mr-2 text-green-500"></i>AI Productivity Insights
+            </h3>
+            <div class="ai-insight">
+                <p class="text-gray-300">Connect your Gmail account to get personalized insights about your email habits, response patterns, and productivity recommendations.</p>
+            </div>
+            <div class="mt-4 space-y-3">
+                <div class="flex items-center text-gray-300">
+                    <i class="fas fa-clock text-yellow-500 mr-3"></i>
+                    <span>Average response time analysis</span>
+                </div>
+                <div class="flex items-center text-gray-300">
+                    <i class="fas fa-filter text-blue-500 mr-3"></i>
+                    <span>Smart categorization suggestions</span>
+                </div>
+                <div class="flex items-center text-gray-300">
+                    <i class="fas fa-bolt text-purple-500 mr-3"></i>
+                    <span>Productivity optimization tips</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <h3 class="text-xl font-semibold text-white mb-4 flex items-center">
+            <i class="fas fa-history mr-2 text-purple-500"></i>Recent Activity
+        </h3>
+        <div class="text-center py-8 text-gray-400">
+            <i class="fas fa-inbox text-3xl mb-3 opacity-50"></i>
+            <p>No recent activity data available</p>
+            <p class="text-sm mt-2">Sign in to track your email activity</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // You can add dashboard-specific JavaScript here
+    // For example, loading actual stats when user is authenticated
+    document.addEventListener('DOMContentLoaded', function() {
+        const tokens = localStorage.getItem('gmail_tokens');
+        if (tokens) {
+            // Load actual dashboard data
+            loadDashboardData();
+        }
+    });
+
+    async function loadDashboardData() {
+        // This would make API calls to get detailed analytics
+        console.log('Loading dashboard data...');
+    }
+</script>
+{% endblock %}
